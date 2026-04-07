@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import ThemeToggle from './ThemeToggle'
+import ThemeToggle from '../common/ThemeToggle'
 
 export default function Header() {
   return (
