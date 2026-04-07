@@ -1,5 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import ThemeToggle from '../common/ThemeToggle'
+import { buttonVariants } from '../ui/button'
+import { LogIn, UserPlus } from 'lucide-react'
 
 export default function Header() {
   return (
@@ -49,6 +51,20 @@ export default function Header() {
               </Link>
             </div>
           )} */}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className={buttonVariants({ variant: 'secondary' })}
+            >
+              Log in <LogIn className="size-4 ml-0.5" />
+            </Link>
+            <Link
+              to="/signup"
+              className={buttonVariants({ variant: 'default' })}
+            >
+              Sign up <UserPlus className="size-4 ml-0.5" />
+            </Link>
+          </div>
         </div>
       </nav>
     </header>
