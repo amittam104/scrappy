@@ -19,9 +19,11 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { authClient } from '#/lib/auth-client'
 import { toast } from 'sonner'
+import { useTransition } from 'react'
 
-export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+export function SignupForm() {
   const navigate = useNavigate()
+  const [isPending, startTransition] = useTransition()
 
   const form = useForm({
     defaultValues: {
@@ -32,32 +34,34 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
     validators: {
       onSubmit: signupSchema,
     },
-    onSubmit: async ({ value }) => {
-      await authClient.signUp.email(
-        {
-          name: value.fullname,
-          email: value.email,
-          password: value.password,
-          // callbackURL: '/dashboard',
-        },
-        {
-          onRequest: () => {},
-          onSuccess: () => {
-            toast.success(
-              'Account created successfully! Please check your email.',
-            )
-            navigate({ to: '/dashboard' })
+    onSubmit: ({ value }) => {
+      startTransition(async () => {
+        await authClient.signUp.email(
+          {
+            name: value.fullname,
+            email: value.email,
+            password: value.password,
+            // callbackURL: '/dashboard',
           },
-          onError: () => {
-            toast.error('Failed to create account. Please try again.')
+          {
+            onRequest: () => {},
+            onSuccess: () => {
+              toast.success(
+                'Account created successfully! Please check your email.',
+              )
+              navigate({ to: '/dashboard' })
+            },
+            onError: () => {
+              toast.error('Failed to create account. Please try again.')
+            },
           },
-        },
-      )
+        )
+      })
     },
   })
 
   return (
-    <Card {...props}>
+    <Card>
       <CardHeader>
         <CardTitle>Create an account</CardTitle>
         <CardDescription>
@@ -152,7 +156,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
             <FieldGroup>
               <Field>
-                <Button type="submit">Create Account</Button>
+                <Button disabled={isPending} type="submit">
+                  {isPending ? 'Creating...' : 'Create Account'}
+                </Button>
                 <FieldDescription className="px-6 text-center">
                   Already have an account? <Link to="/login">Sign in</Link>
                 </FieldDescription>
