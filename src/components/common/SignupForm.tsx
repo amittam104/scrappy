@@ -15,11 +15,14 @@ import {
   FieldLabel,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
+import { authClient } from '#/lib/auth-client'
 import { toast } from 'sonner'
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  const navigate = useNavigate()
+
   const form = useForm({
     defaultValues: {
       fullname: '',
@@ -30,8 +33,26 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       onSubmit: signupSchema,
     },
     onSubmit: async ({ value }) => {
-      toast.success('Form submitted successfully')
-      console.log('Form Values:', value)
+      await authClient.signUp.email(
+        {
+          name: value.fullname,
+          email: value.email,
+          password: value.password,
+          // callbackURL: '/dashboard',
+        },
+        {
+          onRequest: () => {},
+          onSuccess: () => {
+            toast.success(
+              'Account created successfully! Please check your email.',
+            )
+            navigate({ to: '/dashboard' })
+          },
+          onError: () => {
+            toast.error('Failed to create account. Please try again.')
+          },
+        },
+      )
     },
   })
 

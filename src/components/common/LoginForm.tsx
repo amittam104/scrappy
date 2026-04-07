@@ -15,12 +15,15 @@ import {
   FieldLabel,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { loginSchema } from '#/schemas/auth'
 import { toast } from 'sonner'
+import { authClient } from '#/lib/auth-client'
 
 export function LoginForm() {
+  const navigate = useNavigate()
+
   const form = useForm({
     defaultValues: {
       email: '',
@@ -30,8 +33,23 @@ export function LoginForm() {
       onSubmit: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      toast.success('Form submitted successfully')
-      console.log('Form Values:', value)
+      await authClient.signIn.email(
+        {
+          email: value.email,
+          password: value.password,
+          // callbackURL: '/dashboard',
+        },
+        {
+          onRequest: () => {},
+          onSuccess: () => {
+            toast.success('Login successful! Redirecting to dashboard.')
+            navigate({ to: '/dashboard' })
+          },
+          onError: () => {
+            toast.error('Invalid email or password. Please try again.')
+          },
+        },
+      )
     },
   })
 
@@ -69,7 +87,7 @@ export function LoginForm() {
                         aria-invalid={isInvalid}
                         placeholder="john@example.com"
                         type="email"
-                        autoComplete="off"
+                        // autoComplete="off"
                       />
                       {isInvalid && (
                         <FieldError errors={field.state.meta.errors} />
@@ -95,7 +113,7 @@ export function LoginForm() {
                         aria-invalid={isInvalid}
                         placeholder="••••••••"
                         type="password"
-                        autoComplete="off"
+                        // autoComplete="off"
                       />
                       {isInvalid && (
                         <FieldError errors={field.state.meta.errors} />
