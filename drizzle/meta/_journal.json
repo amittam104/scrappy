@@ -8,6 +8,20 @@
       "when": 1775545482607,
       "tag": "0000_chilly_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775656018843,
+      "tag": "0001_melted_triathlon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775657272450,
+      "tag": "0002_married_nighthawk",
+      "breakpoints": true
     }
   ]
 }

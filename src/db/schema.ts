@@ -1,5 +1,13 @@
 import { relations } from 'drizzle-orm'
-import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  index,
+  pgEnum,
+  uuid,
+} from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -90,4 +98,34 @@ export const accountRelations = relations(account, ({ one }) => ({
     fields: [account.userId],
     references: [user.id],
   }),
+}))
+
+export const statusEnum = pgEnum('status', [
+  'PENDING',
+  'PROCESSING',
+  'COMPLETED',
+  'FAILED',
+])
+
+export const savedItem = pgTable('saved_item', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  url: text('url').notNull(),
+  title: text('title'),
+  content: text('content'),
+  summary: text('summary'),
+  tags: text('tags').array(),
+  author: text('author'),
+  ogImage: text('og_image'),
+  status: statusEnum().default('PENDING').notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+
+  publishedAt: timestamp('published_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at'),
+})
+
+export const userSavedItemsRelations = relations(user, ({ many }) => ({
+  savedItems: many(savedItem),
 }))
