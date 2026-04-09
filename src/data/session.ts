@@ -15,16 +15,3 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
     return session
   },
 )
-
-export const ensureSession = createServerFn({ method: 'GET' }).handler(
-  async () => {
-    const headers = getRequestHeaders()
-    const session = await auth.api.getSession({ headers })
-
-    if (!session) {
-      throw redirect({ to: '/login' })
-    }
-
-    return session
-  },
-)

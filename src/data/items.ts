@@ -4,24 +4,21 @@ import { firecrawl } from '#/lib/firecrawl'
 import { importSchema } from '#/schemas/import'
 import type { extractSchema } from '#/schemas/import'
 import { createServerFn } from '@tanstack/react-start'
-import { getSession } from './session'
 import { eq } from 'drizzle-orm/sql/expressions/conditions'
 import type z from 'zod'
 import { toast } from 'sonner'
+import { authFnMiddleware } from '#/middlewares/auth'
 
 export const scrapeUrl = createServerFn({ method: 'POST' })
+  .middleware([authFnMiddleware])
   .inputValidator(importSchema)
-  .handler(async ({ data }) => {
-    const session = await getSession()
+  .handler(async ({ data, context }) => {
+    const { session } = context
     const userId = session.user.id
-
-    if (!userId) {
-      throw new Error('Unauthorized')
-    }
 
     const createdItem = await db
       .insert(savedItem)
-      .values({ url: data.url, userId: userId, status: 'PROCESSING' })
+      .values({ url: data.url, userId, status: 'PROCESSING' })
       .returning({ insertedId: savedItem.id })
 
     try {
