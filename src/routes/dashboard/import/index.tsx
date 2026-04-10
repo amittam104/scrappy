@@ -1,4 +1,4 @@
-import { scrapeUrl } from '#/data/items'
+import { mapUrl, scrapeUrl } from '#/data/items'
 import { bulkImportSchema, importSchema } from '#/schemas/import'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,11 +16,12 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { SearchResultWeb } from '@mendable/firecrawl-js'
 import { useForm } from '@tanstack/react-form'
 
 import { createFileRoute } from '@tanstack/react-router'
 import { Globe, LinkIcon, Loader2 } from 'lucide-react'
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/import/')({
@@ -29,6 +30,9 @@ export const Route = createFileRoute('/dashboard/import/')({
 
 function RouteComponent() {
   const [isPending, startTransition] = useTransition()
+  const [discoveredLinks, setDiscoveredLinks] = useState<
+    Array<SearchResultWeb>
+  >([])
 
   const form = useForm({
     defaultValues: {
@@ -57,9 +61,8 @@ function RouteComponent() {
     onSubmit: ({ value }) => {
       startTransition(async () => {
         console.log(value)
-        // const data = await mapUrlFn({ data: value })
-
-        // setDiscoveredLinks(data)
+        const data = await mapUrl({ data: value })
+        setDiscoveredLinks(data)
       })
     },
   })
@@ -235,6 +238,15 @@ function RouteComponent() {
                     </Button>
                   </FieldGroup>
                 </form>
+
+                {/* Display site links */}
+                {discoveredLinks.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Found {discoveredLinks.length} URLs
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

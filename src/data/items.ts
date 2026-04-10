@@ -1,7 +1,7 @@
 import { db } from '#/db/db'
 import { savedItem } from '#/db/schema'
 import { firecrawl } from '#/lib/firecrawl'
-import { importSchema } from '#/schemas/import'
+import { bulkImportSchema, importSchema } from '#/schemas/import'
 import type { extractSchema } from '#/schemas/import'
 import { createServerFn } from '@tanstack/react-start'
 import { eq } from 'drizzle-orm/sql/expressions/conditions'
@@ -32,6 +32,10 @@ export const scrapeUrl = createServerFn({ method: 'POST' })
               'please extract the author and published date from the article and return it in the following JSON format: { "author": "author name", "publishedAt": "published date" }',
           },
         ],
+        location: {
+          country: 'US',
+          languages: ['en'],
+        },
         onlyMainContent: true,
       })
 
@@ -69,4 +73,20 @@ export const scrapeUrl = createServerFn({ method: 'POST' })
         .set({ status: 'FAILED' })
         .where(eq(savedItem.id, createdItem[0].insertedId))
     }
+  })
+
+export const mapUrl = createServerFn({ method: 'POST' })
+  .middleware([authFnMiddleware])
+  .inputValidator(bulkImportSchema)
+  .handler(async ({ data }) => {
+    const result = await firecrawl.map(data.url, {
+      limit: 20,
+      search: data.search,
+      location: {
+        country: 'US',
+        languages: ['en'],
+      },
+    })
+
+    return result.links
   })
