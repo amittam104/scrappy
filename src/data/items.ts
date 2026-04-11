@@ -8,7 +8,8 @@ import { eq } from 'drizzle-orm/sql/expressions/conditions'
 import type { z as zod } from 'zod'
 import z from 'zod'
 import { toast } from 'sonner'
-import { authFnMiddleware } from '#/middlewares/auth'
+import { authFnMiddleware, authMiddleware } from '#/middlewares/auth'
+import { desc } from 'drizzle-orm'
 
 export const scrapeUrl = createServerFn({ method: 'POST' })
   .middleware([authFnMiddleware])
@@ -158,4 +159,18 @@ export const bulkScrapeUrls = createServerFn({ method: 'POST' })
           .where(eq(savedItem.id, newAddedItem[0].insertedId))
       }
     }
+  })
+
+export const getItemsFn = createServerFn({ method: 'GET' })
+  .middleware([authFnMiddleware])
+  .handler(async ({ context }) => {
+    const userId = context.session.user.id
+
+    const result = await db
+      .select()
+      .from(savedItem)
+      .where(eq(savedItem.userId, userId))
+      .orderBy(desc(savedItem.createdAt))
+
+    return result
   })
