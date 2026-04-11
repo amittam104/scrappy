@@ -1,4 +1,5 @@
-import { mapUrl, scrapeUrl } from '#/data/items'
+import { Checkbox } from '#/components/ui/checkbox'
+import { bulkScrapeUrls, mapUrl, scrapeUrl } from '#/data/items'
 import { bulkImportSchema, importSchema } from '#/schemas/import'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,9 +31,46 @@ export const Route = createFileRoute('/dashboard/import/')({
 
 function RouteComponent() {
   const [isPending, startTransition] = useTransition()
+  const [isBulkPending, startBulkTransition] = useTransition()
   const [discoveredLinks, setDiscoveredLinks] = useState<
     Array<SearchResultWeb>
   >([])
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set())
+
+  function handleSelectAll() {
+    if (selectedUrls.size === discoveredLinks.length) {
+      setSelectedUrls(new Set())
+    } else {
+      setSelectedUrls(new Set(discoveredLinks.map((link) => link.url)))
+    }
+  }
+
+  function handleToggleUrl(url: string) {
+    const newSelectedUrls = new Set(selectedUrls)
+
+    if (newSelectedUrls.has(url)) {
+      newSelectedUrls.delete(url)
+    } else {
+      newSelectedUrls.add(url)
+    }
+
+    setSelectedUrls(newSelectedUrls)
+  }
+
+  function handleBulkScrapeUrls() {
+    startBulkTransition(async () => {
+      if (selectedUrls.size === 0) {
+        toast.error('Please select at least one URL to import.')
+        return
+      }
+
+      await bulkScrapeUrls({
+        data: { urls: Array.from(selectedUrls) },
+      })
+
+      toast.success(`Successfully imported ${selectedUrls.size} URLs!`)
+    })
+  }
 
   const form = useForm({
     defaultValues: {
@@ -239,12 +277,85 @@ function RouteComponent() {
                   </FieldGroup>
                 </form>
 
-                {/* Display site links */}
+                {/* Discovered URLs list */}
                 {discoveredLinks.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Found {discoveredLinks.length} URLs
-                    </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">
+                        Found {discoveredLinks.length} URLs
+                      </p>
+
+                      <Button
+                        onClick={handleSelectAll}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {selectedUrls.size === discoveredLinks.length
+                          ? 'Deselect All'
+                          : 'Select All'}
+                      </Button>
+                    </div>
+
+                    <div className="max-h-80 space-y-2 overflow-y-auto rounded-md border p-4">
+                      {discoveredLinks.map((link) => (
+                        <label
+                          key={link.url}
+                          className="hover:bg-muted/50 flex cursor-pointer items-start gap-3 rounded-md p-2"
+                        >
+                          <Checkbox
+                            checked={selectedUrls.has(link.url)}
+                            onCheckedChange={() => handleToggleUrl(link.url)}
+                            className="mt-0.5"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {link.title ?? 'Title has not been found'}
+                            </p>
+
+                            <p className="text-muted-foreground truncate text-xs">
+                              {link.description ??
+                                'Description has not been found'}
+                            </p>
+                            <p className="text-muted-foreground truncate text-xs">
+                              {link.url}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* {progress && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Importing: {progress.completed} / {progress.total}
+                          </span>
+                          <span className="font-medium">
+                            {Math.round(progress.completed / progress.total) *
+                              100}
+                          </span>
+                        </div>
+                        <Progress
+                          value={(progress.completed / progress.total) * 100}
+                        />
+                      </div>
+                    )} */}
+
+                    <Button
+                      disabled={isBulkPending}
+                      onClick={handleBulkScrapeUrls}
+                      className="w-full"
+                      type="button"
+                    >
+                      {isBulkPending ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Importing...
+                        </>
+                      ) : (
+                        'Import URLs'
+                      )}
+                    </Button>
                   </div>
                 )}
               </CardContent>
