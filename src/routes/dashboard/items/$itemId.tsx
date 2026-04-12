@@ -23,6 +23,25 @@ import { useState } from 'react'
 export const Route = createFileRoute('/dashboard/items/$itemId')({
   component: RouteComponent,
   loader: ({ params }) => getItemByIdFn({ data: { id: params.itemId } }),
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData?.title ?? 'Item Details',
+      },
+      {
+        property: 'og:title',
+        content: loaderData?.title ?? 'Item Details',
+      },
+      {
+        property: 'og:image',
+        content: loaderData?.ogImage ?? '',
+      },
+      {
+        name: 'twitter:title',
+        content: loaderData?.title ?? 'Item Details',
+      },
+    ],
+  }),
 })
 
 function RouteComponent() {

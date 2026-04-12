@@ -169,6 +169,9 @@ export const Route = createFileRoute('/dashboard/items/')({
   component: RouteComponent,
   loader: () => ({ itemsPromise: getItemsFn() }),
   validateSearch: searchParamsSchema,
+  head: () => ({
+    meta: [{ title: 'Saved Items' }],
+  }),
 })
 
 function RouteComponent() {
