@@ -4,12 +4,13 @@ import { firecrawl } from '#/lib/firecrawl'
 import { bulkImportSchema, importSchema } from '#/schemas/import'
 import type { extractSchema } from '#/schemas/import'
 import { createServerFn } from '@tanstack/react-start'
-import { eq } from 'drizzle-orm/sql/expressions/conditions'
+import { and, eq } from 'drizzle-orm/sql/expressions/conditions'
 import type { z as zod } from 'zod'
 import z from 'zod'
 import { toast } from 'sonner'
-import { authFnMiddleware, authMiddleware } from '#/middlewares/auth'
+import { authFnMiddleware } from '#/middlewares/auth'
 import { desc } from 'drizzle-orm'
+import { notFound } from '@tanstack/react-router'
 
 export const scrapeUrl = createServerFn({ method: 'POST' })
   .middleware([authFnMiddleware])
@@ -173,4 +174,23 @@ export const getItemsFn = createServerFn({ method: 'GET' })
       .orderBy(desc(savedItem.createdAt))
 
     return result
+  })
+
+export const getItemByIdFn = createServerFn({ method: 'GET' })
+  .middleware([authFnMiddleware])
+  .inputValidator(z.object({ id: z.string() }))
+  .handler(async ({ data, context }) => {
+    const userId = context.session.user.id
+
+    const results = await db
+      .select()
+      .from(savedItem)
+      .where(and(eq(savedItem.id, data.id), eq(savedItem.userId, userId)))
+      .limit(1)
+
+    if (results.length === 0) {
+      throw notFound()
+    }
+
+    return results[0]
   })

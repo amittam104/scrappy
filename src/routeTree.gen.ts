@@ -18,6 +18,7 @@ import { Route as DashboardImportIndexRouteImport } from './routes/dashboard/imp
 import { Route as DashboardDiscoverIndexRouteImport } from './routes/dashboard/discover/index'
 import { Route as AuthSignupIndexRouteImport } from './routes/_auth/signup/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
+import { Route as DashboardItemsItemIdRouteImport } from './routes/dashboard/items/$itemId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
@@ -64,6 +65,11 @@ const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const DashboardItemsItemIdRoute = DashboardItemsItemIdRouteImport.update({
+  id: '/items/$itemId',
+  path: '/items/$itemId',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/items/$itemId': typeof DashboardItemsItemIdRoute
   '/login/': typeof AuthLoginIndexRoute
   '/signup/': typeof AuthSignupIndexRoute
   '/dashboard/discover/': typeof DashboardDiscoverIndexRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/items/$itemId': typeof DashboardItemsItemIdRoute
   '/login': typeof AuthLoginIndexRoute
   '/signup': typeof AuthSignupIndexRoute
   '/dashboard/discover': typeof DashboardDiscoverIndexRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/dashboard/items/$itemId': typeof DashboardItemsItemIdRoute
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_auth/signup/': typeof AuthSignupIndexRoute
   '/dashboard/discover/': typeof DashboardDiscoverIndexRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/'
     | '/api/auth/$'
+    | '/dashboard/items/$itemId'
     | '/login/'
     | '/signup/'
     | '/dashboard/discover/'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/api/auth/$'
+    | '/dashboard/items/$itemId'
     | '/login'
     | '/signup'
     | '/dashboard/discover'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/'
     | '/api/auth/$'
+    | '/dashboard/items/$itemId'
     | '/_auth/login/'
     | '/_auth/signup/'
     | '/dashboard/discover/'
@@ -212,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/dashboard/items/$itemId': {
+      id: '/dashboard/items/$itemId'
+      path: '/items/$itemId'
+      fullPath: '/dashboard/items/$itemId'
+      preLoaderRoute: typeof DashboardItemsItemIdRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -238,6 +257,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardItemsItemIdRoute: typeof DashboardItemsItemIdRoute
   DashboardDiscoverIndexRoute: typeof DashboardDiscoverIndexRoute
   DashboardImportIndexRoute: typeof DashboardImportIndexRoute
   DashboardItemsIndexRoute: typeof DashboardItemsIndexRoute
@@ -245,6 +265,7 @@ interface DashboardRouteRouteChildren {
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardItemsItemIdRoute: DashboardItemsItemIdRoute,
   DashboardDiscoverIndexRoute: DashboardDiscoverIndexRoute,
   DashboardImportIndexRoute: DashboardImportIndexRoute,
   DashboardItemsIndexRoute: DashboardItemsIndexRoute,
