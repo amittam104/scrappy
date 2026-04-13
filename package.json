@@ -15,6 +15,7 @@
     "check": "prettier --write . && eslint --fix"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.160",
     "@fontsource-variable/outfit": "^5.2.8",
     "@fontsource-variable/oxanium": "^5.2.8",
     "@mendable/firecrawl-js": "^4.18.1",

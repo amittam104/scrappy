@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import { authFnMiddleware } from '#/middlewares/auth'
 import { desc } from 'drizzle-orm'
 import { notFound } from '@tanstack/react-router'
+import { generateText } from 'ai'
+import { openrouter } from '#/lib/openRouter'
 
 export const scrapeUrl = createServerFn({ method: 'POST' })
   .middleware([authFnMiddleware])
@@ -193,4 +195,47 @@ export const getItemByIdFn = createServerFn({ method: 'GET' })
     }
 
     return results[0]
+  })
+
+export const saveSummaryAndGenerateTags = createServerFn({ method: 'POST' })
+  .middleware([authFnMiddleware])
+  .inputValidator(
+    z.object({
+      id: z.string(),
+      summary: z.string(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.session.user.id
+
+    const existingItem = await db.query.savedItem.findFirst({
+      where: and(eq(savedItem.id, data.id), eq(savedItem.userId, userId)),
+    })
+
+    if (!existingItem) {
+      throw notFound()
+    }
+
+    const { text } = await generateText({
+      model: openrouter.chat('nvidia/nemotron-3-nano-30b-a3b:free'),
+      system: `You are a helpful assistant that extracts relevant tags from content summaries.
+Extract 3-5 short, relevant tags that categorize the content.
+Return ONLY a comma-separated list of tags, nothing else.
+Example: technology, programming, web development, javascript`,
+      prompt: `Extract tags from this summary: \n\n${data.summary}`,
+    })
+
+    const tags = text
+      .split(',')
+      .map((tag) => tag.trim().toLowerCase())
+      .filter((tag) => tag.length > 0)
+      .slice(0, 5)
+
+    const updatedItem = await db
+      .update(savedItem)
+      .set({ summary: data.summary, tags: tags })
+      .where(and(eq(savedItem.id, data.id), eq(savedItem.userId, userId)))
+      .returning()
+
+    return updatedItem[0]
   })

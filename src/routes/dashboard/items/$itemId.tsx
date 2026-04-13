@@ -7,18 +7,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '#/components/ui/collapsible'
-import { getItemByIdFn } from '#/data/items'
+import { getItemByIdFn, saveSummaryAndGenerateTags } from '#/data/items'
 import { cn } from '#/lib/utils'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Calendar,
   ChevronDown,
   Clock,
   ExternalLink,
+  Loader2,
+  Sparkles,
   UserIcon,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useCompletion } from '@ai-sdk/react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/items/$itemId')({
   component: RouteComponent,
@@ -47,6 +51,36 @@ export const Route = createFileRoute('/dashboard/items/$itemId')({
 function RouteComponent() {
   const data = Route.useLoaderData()
   const [contentOpen, setContentOpen] = useState(false)
+  const router = useRouter()
+
+  const { completion, complete, isLoading } = useCompletion({
+    api: '/api/ai/summary',
+    initialCompletion: data.summary || undefined,
+    body: {
+      itemId: data.id,
+    },
+    onFinish: async (_prompt, completionText) => {
+      await saveSummaryAndGenerateTags({
+        data: { id: data.id, summary: completionText },
+      })
+
+      toast.success('Summary generated successfully')
+      router.invalidate()
+    },
+    onError: (err) => {
+      console.error('Error fetching summary:', err.message)
+      toast.error(err.message || 'Failed to fetch summary')
+    },
+  })
+
+  function handleGenerateSummary() {
+    if (!data.content) {
+      toast.error('No content available to summarize')
+      return
+    }
+
+    complete(data.content)
+  }
 
   return (
     <div className="w-full mx-auto max-w-5xl space-y-6">
@@ -115,10 +149,47 @@ function RouteComponent() {
           </div>
         )}
 
-        <p>This is for the summary</p>
+        {/* AI Summary */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h2 className="tracking-wide text-primary mb-3">
+                  {completion || data.summary ? (
+                    <MessageResponse>{completion}</MessageResponse>
+                  ) : (
+                    <p className="text-sm  text-muted-foreground italic">
+                      {data.content
+                        ? 'No summary yet. Generate one with AI'
+                        : 'No content available to summarize'}
+                    </p>
+                  )}
+                </h2>
+              </div>
+              {data.content && !data.summary && (
+                <Button
+                  disabled={isLoading}
+                  size="sm"
+                  onClick={handleGenerateSummary}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-4" />
+                      Generate Summary
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Content Section */}
-
         {data.content && (
           <Collapsible open={contentOpen} onOpenChange={setContentOpen}>
             <CollapsibleTrigger asChild>
