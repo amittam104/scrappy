@@ -12,4 +12,11 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
   },
+  baseURL: {
+    allowedHosts: [
+      'https://special-halibut-jjq99rr6p4q3q6px-3000.app.github.dev',
+      'localhost:3000',
+    ],
+    protocol: 'auto',
+  },
 })
