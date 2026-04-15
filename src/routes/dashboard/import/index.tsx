@@ -1,4 +1,6 @@
 import { Checkbox } from '#/components/ui/checkbox'
+import { Progress } from '#/components/ui/progress'
+import type { bulkScrapeProgress } from '#/data/items'
 import { bulkScrapeUrls, mapUrl, scrapeUrl } from '#/data/items'
 import { bulkImportSchema, importSchema } from '#/schemas/import'
 import { Button } from '@/components/ui/button'
@@ -36,6 +38,7 @@ function RouteComponent() {
     Array<SearchResultWeb>
   >([])
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set())
+  const [progress, setProgress] = useState<bulkScrapeProgress | null>(null)
 
   function handleSelectAll() {
     if (selectedUrls.size === discoveredLinks.length) {
@@ -57,18 +60,42 @@ function RouteComponent() {
     setSelectedUrls(newSelectedUrls)
   }
 
-  function handleBulkScrapeUrls() {
+  function handleBulkImport() {
     startBulkTransition(async () => {
       if (selectedUrls.size === 0) {
         toast.error('Please select at least one URL to import.')
         return
       }
-
-      await bulkScrapeUrls({
-        data: { urls: Array.from(selectedUrls) },
+      setProgress({
+        completed: 0,
+        total: selectedUrls.size,
+        url: '',
+        status: 'Success',
       })
 
-      toast.success(`Successfully imported ${selectedUrls.size} URLs!`)
+      let successCount = 0
+      let failCount = 0
+
+      for await (const update of await bulkScrapeUrls({
+        data: { urls: Array.from(selectedUrls) },
+      })) {
+        setProgress(update)
+
+        if (update.status === 'Success') {
+          successCount++
+        } else {
+          failCount++
+        }
+      }
+      setProgress(null)
+
+      if (failCount > 0) {
+        toast.success(
+          `Imported ${successCount} URLs, but failed to import ${failCount} URLs.`,
+        )
+      } else {
+        toast.success(`Successfully imported all ${successCount} URLs!`)
+      }
     })
   }
 
@@ -324,7 +351,7 @@ function RouteComponent() {
                       ))}
                     </div>
 
-                    {/* {progress && (
+                    {progress && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
@@ -339,18 +366,20 @@ function RouteComponent() {
                           value={(progress.completed / progress.total) * 100}
                         />
                       </div>
-                    )} */}
+                    )}
 
                     <Button
                       disabled={isBulkPending}
-                      onClick={handleBulkScrapeUrls}
+                      onClick={handleBulkImport}
                       className="w-full"
                       type="button"
                     >
                       {isBulkPending ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          Importing...
+                          {progress
+                            ? `Importing (${progress.completed} / ${progress.total})`
+                            : 'Starting...'}
                         </>
                       ) : (
                         'Import URLs'

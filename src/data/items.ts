@@ -1,7 +1,7 @@
 import { db } from '#/db/db'
 import { savedItem } from '#/db/schema'
 import { firecrawl } from '#/lib/firecrawl'
-import { bulkImportSchema, importSchema } from '#/schemas/import'
+import { bulkImportSchema, importSchema, searchSchema } from '#/schemas/import'
 import type { extractSchema } from '#/schemas/import'
 import { createServerFn } from '@tanstack/react-start'
 import { and, eq } from 'drizzle-orm/sql/expressions/conditions'
@@ -13,6 +13,7 @@ import { desc } from 'drizzle-orm'
 import { notFound } from '@tanstack/react-router'
 import { generateText } from 'ai'
 import { openrouter } from '#/lib/openRouter'
+import type { SearchResultWeb } from '@mendable/firecrawl-js'
 
 export const scrapeUrl = createServerFn({ method: 'POST' })
   .middleware([authFnMiddleware])
@@ -96,6 +97,13 @@ export const mapUrl = createServerFn({ method: 'POST' })
     return result.links
   })
 
+export type bulkScrapeProgress = {
+  completed: number
+  total: number
+  url: string
+  status: 'Success' | 'Failed'
+}
+
 export const bulkScrapeUrls = createServerFn({ method: 'POST' })
   .middleware([authFnMiddleware])
   .inputValidator(
@@ -103,12 +111,16 @@ export const bulkScrapeUrls = createServerFn({ method: 'POST' })
       urls: z.array(z.url()),
     }),
   )
-  .handler(async ({ data, context }) => {
-    for (const url of data.urls) {
+  .handler(async function* ({ data, context }) {
+    const total = data.urls.length
+
+    for (const [i, url] of data.urls.entries()) {
       const newAddedItem = await db
         .insert(savedItem)
         .values({ url, userId: context.session.user.id, status: 'PROCESSING' })
         .returning({ insertedId: savedItem.id })
+
+      let status: bulkScrapeProgress['status']
 
       try {
         const result = await firecrawl.scrape(url, {
@@ -152,15 +164,24 @@ export const bulkScrapeUrls = createServerFn({ method: 'POST' })
             author: savedItem.author,
             publishedAt: savedItem.publishedAt,
           })
-
+        status = 'Success'
         toast.success('URL scraped successfully!')
       } catch (error) {
+        status = 'Failed'
         toast.error('Failed to scrape URL.')
         await db
           .update(savedItem)
           .set({ status: 'FAILED' })
           .where(eq(savedItem.id, newAddedItem[0].insertedId))
       }
+      const progress: bulkScrapeProgress = {
+        completed: i + 1,
+        total: total,
+        url: url,
+        status: status,
+      }
+
+      yield progress
     }
   })
 
@@ -238,4 +259,28 @@ Example: technology, programming, web development, javascript`,
       .returning()
 
     return updatedItem[0]
+  })
+
+export const searchWebFn = createServerFn({ method: 'POST' })
+  .middleware([authFnMiddleware])
+  .inputValidator(searchSchema)
+  .handler(async ({ data }) => {
+    const results = await firecrawl.search(data.query, {
+      limit: 10,
+      scrapeOptions: { formats: ['markdown'] },
+      location: 'India',
+      tbs: 'qdr:y',
+    })
+
+    console.log(results)
+
+    if (!results.web || results.web.length === 0) {
+      return []
+    }
+
+    return results.web.map((item) => ({
+      title: (item as SearchResultWeb).title,
+      url: (item as SearchResultWeb).url,
+      description: (item as SearchResultWeb).description,
+    }))
   })
