@@ -19,4 +19,11 @@
       "head_sampling_rate": 1,
     },
   },
+  "vars": {
+    "BETTER_AUTH_SECRET": "bzeU9YKxyGQRaP3BgoklFkjzdVxY3F0k",
+    "BETTER_AUTH_URL": "https://scrappy.amittambulkar104.workers.dev/",
+    "DATABASE_URL": "postgresql://neondb_owner:npg_eZQdFU9S1zgW@ep-solitary-hill-amx79vin-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    "FIRECRAWL_API_KEY": "fc-52d6804ac1b44c9f92f0bee7118397ca",
+    "AI_API_KEY": "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",
+  },
 }
